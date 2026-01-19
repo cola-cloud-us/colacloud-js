@@ -1,0 +1,34 @@
+# Source files (we ship dist/)
+src/
+
+# Tests
+tests/
+coverage/
+vitest.config.ts
+
+# Development configs
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docs (README is kept)
+docs/
+CONTRIBUTING.md
+CHANGELOG.md
