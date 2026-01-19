@@ -25,6 +25,7 @@ import type {
   PermitteeListParams,
   PermitteeSummary,
   RateLimitInfo,
+  ResponseWithRateLimit,
   SingleResponse,
   UsageStats,
 } from './types.js';
@@ -33,22 +34,18 @@ const DEFAULT_BASE_URL = 'https://app.colacloud.us/api/v1';
 const DEFAULT_TIMEOUT = 30000;
 
 /**
- * Internal type for fetch response with rate limit info
- */
-interface FetchResult<T> {
-  data: T;
-  rateLimit: RateLimitInfo | null;
-}
-
-/**
  * Convert camelCase params to snake_case for API
+ * Handles consecutive capitals: ABVMin -> abv_min, productType -> product_type
  */
 function toSnakeCase(params: Record<string, unknown>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) continue;
-    // Convert camelCase to snake_case
-    const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+    // Convert camelCase to snake_case, handling consecutive capitals
+    const snakeKey = key
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2') // ABVMin -> ABV_Min
+      .replace(/([a-z])([A-Z])/g, '$1_$2') // productType -> product_Type
+      .toLowerCase();
     result[snakeKey] = String(value);
   }
   return result;
@@ -138,7 +135,7 @@ export class ColaCloud {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     params?: Record<string, unknown>
-  ): Promise<FetchResult<T>> {
+  ): Promise<ResponseWithRateLimit<T>> {
     // Build URL with query parameters for GET requests
     let url = `${this.baseUrl}${path}`;
     if (method === 'GET' && params && Object.keys(params).length > 0) {
@@ -269,7 +266,7 @@ class ColasResource {
    */
   async listWithRateLimit(
     params: ColaListParams = {}
-  ): Promise<FetchResult<PaginatedResponse<ColaSummary>>> {
+  ): Promise<ResponseWithRateLimit<PaginatedResponse<ColaSummary>>> {
     return this.client.request<PaginatedResponse<ColaSummary>>(
       'GET',
       '/colas',
@@ -303,7 +300,7 @@ class ColasResource {
    * @param ttbId The unique TTB identifier
    * @returns COLA details with rate limit info
    */
-  async getWithRateLimit(ttbId: string): Promise<FetchResult<ColaDetail>> {
+  async getWithRateLimit(ttbId: string): Promise<ResponseWithRateLimit<ColaDetail>> {
     try {
       const result = await this.client.request<SingleResponse<ColaDetail>>(
         'GET',
@@ -374,7 +371,7 @@ class PermitteesResource {
    */
   async listWithRateLimit(
     params: PermitteeListParams = {}
-  ): Promise<FetchResult<PaginatedResponse<PermitteeSummary>>> {
+  ): Promise<ResponseWithRateLimit<PaginatedResponse<PermitteeSummary>>> {
     return this.client.request<PaginatedResponse<PermitteeSummary>>(
       'GET',
       '/permittees',
@@ -409,7 +406,7 @@ class PermitteesResource {
    */
   async getWithRateLimit(
     permitNumber: string
-  ): Promise<FetchResult<PermitteeDetail>> {
+  ): Promise<ResponseWithRateLimit<PermitteeDetail>> {
     try {
       const result = await this.client.request<SingleResponse<PermitteeDetail>>(
         'GET',
@@ -483,7 +480,7 @@ class BarcodesResource {
    */
   async lookupWithRateLimit(
     barcodeValue: string
-  ): Promise<FetchResult<BarcodeLookupResult>> {
+  ): Promise<ResponseWithRateLimit<BarcodeLookupResult>> {
     try {
       const result = await this.client.request<
         SingleResponse<BarcodeLookupResult>
@@ -520,7 +517,7 @@ class UsageResource {
    * Get usage statistics with rate limit information
    * @returns Usage statistics with rate limit info
    */
-  async getWithRateLimit(): Promise<FetchResult<UsageStats>> {
+  async getWithRateLimit(): Promise<ResponseWithRateLimit<UsageStats>> {
     const result = await this.client.request<SingleResponse<UsageStats>>(
       'GET',
       '/usage'

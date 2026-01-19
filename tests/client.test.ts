@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ColaCloud } from '../src/client.js';
 import {
   AuthenticationError,
+  NetworkError,
   NotFoundError,
   RateLimitError,
   ValidationError,
@@ -378,6 +379,30 @@ describe('ColaCloud', () => {
       const client = new ColaCloud({ apiKey: 'test-key', timeout: 100 });
 
       await expect(client.colas.list()).rejects.toThrow(TimeoutError);
+    });
+
+    it('should throw NetworkError for network failures', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+
+      await expect(client.colas.list()).rejects.toThrow('ECONNREFUSED');
+    });
+
+    it('should include original error as cause in NetworkError', async () => {
+      const originalError = new Error('Connection refused');
+      mockFetch.mockRejectedValueOnce(originalError);
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+
+      try {
+        await client.colas.list();
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(NetworkError);
+        const networkError = error as NetworkError;
+        expect(networkError.cause).toBe(originalError);
+      }
     });
   });
 
