@@ -101,34 +101,14 @@ export interface ColaSummary {
   class_name: string | null;
   /** Origin/country of the product */
   origin_name: string | null;
-  /** "Domestic" or "Imported" */
-  domestic_or_imported: string | null;
   /** Permit number of the applicant */
   permit_number: string | null;
-  /** Type of application (e.g., "CERTIFICATE OF LABEL APPROVAL") */
-  application_type: string | null;
-  /** Status of the application (e.g., "APPROVED") */
-  application_status: string | null;
-  /** Date the application was submitted (ISO date string) */
-  application_date: string | null;
   /** Date the COLA was approved (ISO date string) */
   approval_date: string | null;
-  /** Date the COLA expires (ISO date string) */
-  expiration_date: string | null;
-  /** Alcohol by volume percentage */
-  abv: number | null;
-  /** Container volume */
-  volume: string | null;
-  /** Volume unit (e.g., "ml", "L") */
-  volume_unit: string | null;
-  /** LLM-assigned category (e.g., "Bourbon") */
-  llm_category: string | null;
-  /** LLM-assigned category path (e.g., "Spirits > Whiskey > Bourbon") */
-  llm_category_path: string | null;
   /** Number of images associated with this COLA */
   image_count: number;
-  /** URL to the main/primary image */
-  main_image_url: string | null;
+  /** Whether any barcode was extracted from label images */
+  has_barcode: boolean;
 }
 
 /**
@@ -367,18 +347,31 @@ export interface BarcodeLookupResult {
 /**
  * API usage statistics for the current account
  */
+/**
+ * Usage quota for a single meter (detail views or list records)
+ */
+export interface UsageQuota {
+  /** Number used this period */
+  used: number;
+  /** Maximum allowed this period */
+  limit: number;
+  /** Remaining this period */
+  remaining: number;
+}
+
+/**
+ * API usage statistics for the current account
+ */
 export interface UsageStats {
-  /** Account tier (e.g., "free", "pro", "enterprise") */
+  /** Account tier (e.g., "free", "starter", "pro") */
   tier: string;
-  /** Monthly request limit */
-  monthly_limit: number;
-  /** Current billing period (ISO date string) */
+  /** Current billing period (YYYY-MM) */
   current_period: string;
-  /** Number of requests used this period */
-  requests_used: number;
-  /** Number of requests remaining this period */
-  requests_remaining: number;
-  /** Per-minute rate limit */
+  /** Detail view usage and limits */
+  detail_views: UsageQuota;
+  /** List record usage and limits */
+  list_records: UsageQuota;
+  /** Per-minute burst limit */
   per_minute_limit: number;
 }
 

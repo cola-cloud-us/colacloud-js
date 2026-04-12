@@ -165,9 +165,10 @@ for (const cola of result.colas) {
 const usage = await client.usage.get();
 
 console.log(`Tier: ${usage.tier}`);
-console.log(`Used: ${usage.requests_used} / ${usage.monthly_limit}`);
-console.log(`Remaining: ${usage.requests_remaining}`);
-console.log(`Rate limit: ${usage.per_minute_limit} req/min`);
+console.log(`Period: ${usage.current_period}`);
+console.log(`Detail views: ${usage.detail_views.used} / ${usage.detail_views.limit}`);
+console.log(`List records: ${usage.list_records.used} / ${usage.list_records.limit}`);
+console.log(`Burst limit: ${usage.per_minute_limit} req/min`);
 ```
 
 ### Rate Limit Information
