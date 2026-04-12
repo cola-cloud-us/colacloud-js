@@ -2,7 +2,7 @@
  * COLA Cloud SDK Custom Error Classes
  */
 
-import type { ApiErrorResponse, RateLimitInfo } from './types.js';
+import type { ApiErrorResponse, QuotaInfo } from './types.js';
 
 /**
  * Base error class for all COLA Cloud SDK errors
@@ -67,19 +67,19 @@ export class AuthenticationError extends ColaCloudError {
  * Error thrown when rate limit is exceeded (429 Too Many Requests)
  */
 export class RateLimitError extends ColaCloudError {
-  /** Rate limit information from headers */
-  public readonly rateLimit: RateLimitInfo | null;
+  /** Quota information from headers */
+  public readonly quota: QuotaInfo | null;
   /** Seconds until the rate limit resets */
   public readonly retryAfter: number | null;
 
   constructor(
     message: string = 'Rate limit exceeded',
-    rateLimit: RateLimitInfo | null = null,
+    quota: QuotaInfo | null = null,
     retryAfter: number | null = null
   ) {
     super(message, 429, 'rate_limit_exceeded');
     this.name = 'RateLimitError';
-    this.rateLimit = rateLimit;
+    this.quota = quota;
     this.retryAfter = retryAfter;
 
     if (Error.captureStackTrace) {

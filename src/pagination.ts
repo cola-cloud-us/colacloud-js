@@ -2,7 +2,7 @@
  * COLA Cloud SDK Pagination Utilities
  */
 
-import type { Pagination, PaginatedResponse, RateLimitInfo } from './types.js';
+import type { Pagination, PaginatedResponse, QuotaInfo } from './types.js';
 
 /**
  * Options for creating a paginated iterator
@@ -13,7 +13,7 @@ export interface PaginatedIteratorOptions<TParams> {
   /** Function to fetch a page of results */
   fetchPage: (params: TParams & { page: number }) => Promise<{
     response: PaginatedResponse<unknown>;
-    rateLimit: RateLimitInfo | null;
+    quota: QuotaInfo | null;
   }>;
   /** Starting page number (defaults to 1) */
   startPage?: number;
@@ -33,8 +33,8 @@ export interface PaginatedIteratorResult<T> {
   indexInPage: number;
   /** Total items across all pages */
   total: number;
-  /** Rate limit info from the last request */
-  rateLimit: RateLimitInfo | null;
+  /** Quota info from the last request */
+  quota: QuotaInfo | null;
 }
 
 /**
@@ -67,9 +67,15 @@ export function createPaginatedIterator<T, TParams>(
             }
 
             // Check if we've gone past the last page
-            if (pagination !== null && currentPage > pagination.pages) {
-              done = true;
-              break;
+            if (pagination !== null) {
+              if (pagination.has_more === false) {
+                done = true;
+                break;
+              }
+              if (pagination.pages !== null && currentPage > pagination.pages) {
+                done = true;
+                break;
+              }
             }
 
             // Fetch next page
@@ -125,7 +131,7 @@ export function createPaginatedIteratorWithMetadata<T, TParams>(
       let currentItems: T[] = [];
       let currentIndex = 0;
       let pagination: Pagination | null = null;
-      let rateLimit: RateLimitInfo | null = null;
+      let quota: QuotaInfo | null = null;
       let pagesFetched = 0;
       let done = false;
 
@@ -140,9 +146,15 @@ export function createPaginatedIteratorWithMetadata<T, TParams>(
             }
 
             // Check if we've gone past the last page
-            if (pagination !== null && currentPage > pagination.pages) {
-              done = true;
-              break;
+            if (pagination !== null) {
+              if (pagination.has_more === false) {
+                done = true;
+                break;
+              }
+              if (pagination.pages !== null && currentPage > pagination.pages) {
+                done = true;
+                break;
+              }
             }
 
             // Fetch next page
@@ -152,7 +164,7 @@ export function createPaginatedIteratorWithMetadata<T, TParams>(
             });
 
             pagination = result.response.pagination;
-            rateLimit = result.rateLimit;
+            quota = result.quota;
             currentItems = result.response.data as T[];
             currentIndex = 0;
             currentPage++;
@@ -176,7 +188,7 @@ export function createPaginatedIteratorWithMetadata<T, TParams>(
               page: currentPage - 1, // We already incremented after fetch
               indexInPage: currentIndex,
               total: pagination?.total ?? 0,
-              rateLimit,
+              quota,
             };
             currentIndex++;
             return { done: false, value: result };

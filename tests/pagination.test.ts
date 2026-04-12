@@ -9,7 +9,7 @@ import {
   collectAll,
   take,
 } from '../src/pagination.js';
-import type { PaginatedResponse, RateLimitInfo } from '../src/types.js';
+import type { PaginatedResponse, QuotaInfo } from '../src/types.js';
 
 describe('createPaginatedIterator', () => {
   it('should iterate through all pages', async () => {
@@ -21,7 +21,7 @@ describe('createPaginatedIterator', () => {
 
     const fetchPage = vi.fn().mockImplementation(async ({ page }) => ({
       response: pages[page - 1],
-      rateLimit: null,
+      quota: null,
     }));
 
     const iterator = createPaginatedIterator<{ id: number }, { q: string }>({
@@ -42,7 +42,7 @@ describe('createPaginatedIterator', () => {
   it('should handle empty results', async () => {
     const fetchPage = vi.fn().mockResolvedValue({
       response: { data: [], pagination: { page: 1, per_page: 20, total: 0, pages: 0 } },
-      rateLimit: null,
+      quota: null,
     });
 
     const iterator = createPaginatedIterator<{ id: number }, object>({
@@ -64,7 +64,7 @@ describe('createPaginatedIterator', () => {
         data: [{ id: page }],
         pagination: { page, per_page: 1, total: 100, pages: 100 },
       },
-      rateLimit: null,
+      quota: null,
     }));
 
     const iterator = createPaginatedIterator<{ id: number }, object>({
@@ -88,7 +88,7 @@ describe('createPaginatedIterator', () => {
         data: [{ id: page }],
         pagination: { page, per_page: 1, total: 5, pages: 5 },
       },
-      rateLimit: null,
+      quota: null,
     }));
 
     const iterator = createPaginatedIterator<{ id: number }, object>({
@@ -109,13 +109,13 @@ describe('createPaginatedIterator', () => {
 
 describe('createPaginatedIteratorWithMetadata', () => {
   it('should yield items with metadata', async () => {
-    const rateLimit: RateLimitInfo = { limit: 60, remaining: 59, reset: 1704067260 };
+    const quota: QuotaInfo = { meter: 'list_records', limit: 10000, remaining: 9900, reset: 1704067260 };
     const fetchPage = vi.fn().mockResolvedValue({
       response: {
         data: [{ id: 1 }, { id: 2 }],
         pagination: { page: 1, per_page: 2, total: 2, pages: 1 },
       },
-      rateLimit,
+      quota,
     });
 
     const iterator = createPaginatedIteratorWithMetadata<{ id: number }, object>({
@@ -134,14 +134,14 @@ describe('createPaginatedIteratorWithMetadata', () => {
       page: 1,
       indexInPage: 0,
       total: 2,
-      rateLimit,
+      quota,
     });
     expect(results[1]).toEqual({
       item: { id: 2 },
       page: 1,
       indexInPage: 1,
       total: 2,
-      rateLimit,
+      quota,
     });
   });
 });

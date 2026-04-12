@@ -65,9 +65,9 @@ export type {
   PaginatedResponse,
   SingleResponse,
 
-  // Rate limiting
-  RateLimitInfo,
-  ResponseWithRateLimit,
+  // Quota
+  QuotaInfo,
+  ResponseWithQuota,
 
   // COLA types
   ColaSummary,

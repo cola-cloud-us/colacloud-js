@@ -30,10 +30,14 @@ export interface Pagination {
   page: number;
   /** Number of items per page */
   per_page: number;
-  /** Total number of items across all pages */
-  total: number;
-  /** Total number of pages */
-  pages: number;
+  /** Total number of items across all pages (null when using offset pagination without count) */
+  total: number | null;
+  /** Total number of pages (null when using offset pagination without count) */
+  pages: number | null;
+  /** Whether there are more results available */
+  has_more?: boolean;
+  /** Pagination mode: "cursor" or "offset" */
+  mode?: string;
 }
 
 /**
@@ -55,29 +59,31 @@ export interface SingleResponse<T> {
 }
 
 // ============================================================================
-// Rate Limit Types
+// Quota Types
 // ============================================================================
 
 /**
- * Rate limit information from response headers
+ * Quota information parsed from response headers
  */
-export interface RateLimitInfo {
-  /** Maximum requests allowed per minute */
+export interface QuotaInfo {
+  /** Which meter this quota applies to */
+  meter: 'detail_views' | 'list_records';
+  /** Quota limit for the current billing period */
   limit: number;
-  /** Remaining requests in the current window */
+  /** Remaining quota in the current billing period */
   remaining: number;
-  /** Unix timestamp when the rate limit resets */
+  /** Unix timestamp when quotas reset (first of next month) */
   reset: number;
 }
 
 /**
- * Extended response that includes rate limit information
+ * Extended response that includes quota information
  */
-export interface ResponseWithRateLimit<T> {
+export interface ResponseWithQuota<T> {
   /** The response data */
   data: T;
-  /** Rate limit information from headers */
-  rateLimit: RateLimitInfo | null;
+  /** Quota information from headers */
+  quota: QuotaInfo | null;
 }
 
 // ============================================================================

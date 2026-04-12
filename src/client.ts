@@ -24,8 +24,8 @@ import type {
   PermitteeDetail,
   PermitteeListParams,
   PermitteeSummary,
-  RateLimitInfo,
-  ResponseWithRateLimit,
+  QuotaInfo,
+  ResponseWithQuota,
   SingleResponse,
   UsageStats,
 } from './types.js';
@@ -52,18 +52,30 @@ function toSnakeCase(params: Record<string, unknown>): Record<string, string> {
 }
 
 /**
- * Parse rate limit information from response headers
+ * Parse quota information from response headers.
+ * The API returns either X-Detail-Views-* or X-List-Records-* headers
+ * depending on the endpoint, plus X-Quota-Reset on all responses.
  */
-function parseRateLimitHeaders(headers: Headers): RateLimitInfo | null {
-  const limit = headers.get('X-RateLimit-Limit');
-  const remaining = headers.get('X-RateLimit-Remaining');
-  const reset = headers.get('X-RateLimit-Reset');
+function parseQuotaHeaders(headers: Headers): QuotaInfo | null {
+  const reset = headers.get('X-Quota-Reset');
+  if (reset === null) return null;
 
-  if (limit === null || remaining === null || reset === null) {
-    return null;
+  // Try detail views first
+  let limit = headers.get('X-Detail-Views-Limit');
+  let remaining = headers.get('X-Detail-Views-Remaining');
+  let meter: 'detail_views' | 'list_records' = 'detail_views';
+
+  // Fall back to list records
+  if (limit === null) {
+    limit = headers.get('X-List-Records-Limit');
+    remaining = headers.get('X-List-Records-Remaining');
+    meter = 'list_records';
   }
 
+  if (limit === null || remaining === null) return null;
+
   return {
+    meter,
     limit: parseInt(limit, 10),
     remaining: parseInt(remaining, 10),
     reset: parseInt(reset, 10),
@@ -135,7 +147,7 @@ export class ColaCloud {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     params?: Record<string, unknown>
-  ): Promise<ResponseWithRateLimit<T>> {
+  ): Promise<ResponseWithQuota<T>> {
     // Build URL with query parameters for GET requests
     let url = `${this.baseUrl}${path}`;
     if (method === 'GET' && params && Object.keys(params).length > 0) {
@@ -160,17 +172,17 @@ export class ColaCloud {
 
       clearTimeout(timeoutId);
 
-      // Parse rate limit headers
-      const rateLimit = parseRateLimitHeaders(response.headers);
+      // Parse quota headers
+      const quota = parseQuotaHeaders(response.headers);
 
       // Handle errors
       if (!response.ok) {
-        await this.handleErrorResponse(response, rateLimit);
+        await this.handleErrorResponse(response, quota);
       }
 
       // Parse successful response
       const data = (await response.json()) as T;
-      return { data, rateLimit };
+      return { data, quota };
     } catch (error) {
       clearTimeout(timeoutId);
 
@@ -197,7 +209,7 @@ export class ColaCloud {
    */
   private async handleErrorResponse(
     response: Response,
-    rateLimit: RateLimitInfo | null
+    quota: QuotaInfo | null
   ): Promise<never> {
     let errorData: ApiErrorResponse;
     try {
@@ -219,7 +231,7 @@ export class ColaCloud {
         const retryAfter = response.headers.get('Retry-After');
         throw new RateLimitError(
           message,
-          rateLimit,
+          quota,
           retryAfter ? parseInt(retryAfter, 10) : null
         );
       }
@@ -260,13 +272,13 @@ class ColasResource {
   }
 
   /**
-   * List COLAs with rate limit information
+   * List COLAs with quota information
    * @param params Search and filter parameters
-   * @returns Paginated list with rate limit info
+   * @returns Paginated list with quota info
    */
-  async listWithRateLimit(
+  async listWithQuota(
     params: ColaListParams = {}
-  ): Promise<ResponseWithRateLimit<PaginatedResponse<ColaSummary>>> {
+  ): Promise<ResponseWithQuota<PaginatedResponse<ColaSummary>>> {
     return this.client.request<PaginatedResponse<ColaSummary>>(
       'GET',
       '/colas',
@@ -296,17 +308,17 @@ class ColasResource {
   }
 
   /**
-   * Get a single COLA with rate limit information
+   * Get a single COLA with quota information
    * @param ttbId The unique TTB identifier
-   * @returns COLA details with rate limit info
+   * @returns COLA details with quota info
    */
-  async getWithRateLimit(ttbId: string): Promise<ResponseWithRateLimit<ColaDetail>> {
+  async getWithQuota(ttbId: string): Promise<ResponseWithQuota<ColaDetail>> {
     try {
       const result = await this.client.request<SingleResponse<ColaDetail>>(
         'GET',
         `/colas/${encodeURIComponent(ttbId)}`
       );
-      return { data: result.data.data, rateLimit: result.rateLimit };
+      return { data: result.data.data, quota: result.quota };
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw new NotFoundError('COLA', ttbId);
@@ -336,7 +348,7 @@ class ColasResource {
           '/colas',
           p as unknown as Record<string, unknown>
         );
-        return { response: result.data, rateLimit: result.rateLimit };
+        return { response: result.data, quota: result.quota };
       },
     });
   }
@@ -365,13 +377,13 @@ class PermitteesResource {
   }
 
   /**
-   * List permittees with rate limit information
+   * List permittees with quota information
    * @param params Search and filter parameters
-   * @returns Paginated list with rate limit info
+   * @returns Paginated list with quota info
    */
-  async listWithRateLimit(
+  async listWithQuota(
     params: PermitteeListParams = {}
-  ): Promise<ResponseWithRateLimit<PaginatedResponse<PermitteeSummary>>> {
+  ): Promise<ResponseWithQuota<PaginatedResponse<PermitteeSummary>>> {
     return this.client.request<PaginatedResponse<PermitteeSummary>>(
       'GET',
       '/permittees',
@@ -400,19 +412,19 @@ class PermitteesResource {
   }
 
   /**
-   * Get a single permittee with rate limit information
+   * Get a single permittee with quota information
    * @param permitNumber The unique permit number
-   * @returns Permittee details with rate limit info
+   * @returns Permittee details with quota info
    */
-  async getWithRateLimit(
+  async getWithQuota(
     permitNumber: string
-  ): Promise<ResponseWithRateLimit<PermitteeDetail>> {
+  ): Promise<ResponseWithQuota<PermitteeDetail>> {
     try {
       const result = await this.client.request<SingleResponse<PermitteeDetail>>(
         'GET',
         `/permittees/${encodeURIComponent(permitNumber)}`
       );
-      return { data: result.data.data, rateLimit: result.rateLimit };
+      return { data: result.data.data, quota: result.quota };
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw new NotFoundError('Permittee', permitNumber);
@@ -442,7 +454,7 @@ class PermitteesResource {
         const result = await this.client.request<
           PaginatedResponse<PermitteeSummary>
         >('GET', '/permittees', p as unknown as Record<string, unknown>);
-        return { response: result.data, rateLimit: result.rateLimit };
+        return { response: result.data, quota: result.quota };
       },
     });
   }
@@ -474,18 +486,18 @@ class BarcodesResource {
   }
 
   /**
-   * Look up barcode with rate limit information
+   * Look up barcode with quota information
    * @param barcodeValue The barcode to search for
-   * @returns Barcode lookup result with rate limit info
+   * @returns Barcode lookup result with quota info
    */
-  async lookupWithRateLimit(
+  async lookupWithQuota(
     barcodeValue: string
-  ): Promise<ResponseWithRateLimit<BarcodeLookupResult>> {
+  ): Promise<ResponseWithQuota<BarcodeLookupResult>> {
     try {
       const result = await this.client.request<
         SingleResponse<BarcodeLookupResult>
       >('GET', `/barcode/${encodeURIComponent(barcodeValue)}`);
-      return { data: result.data.data, rateLimit: result.rateLimit };
+      return { data: result.data.data, quota: result.quota };
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw new NotFoundError('Barcode', barcodeValue);
@@ -514,14 +526,14 @@ class UsageResource {
   }
 
   /**
-   * Get usage statistics with rate limit information
-   * @returns Usage statistics with rate limit info
+   * Get usage statistics with quota information
+   * @returns Usage statistics with quota info
    */
-  async getWithRateLimit(): Promise<ResponseWithRateLimit<UsageStats>> {
+  async getWithQuota(): Promise<ResponseWithQuota<UsageStats>> {
     const result = await this.client.request<SingleResponse<UsageStats>>(
       'GET',
       '/usage'
     );
-    return { data: result.data.data, rateLimit: result.rateLimit };
+    return { data: result.data.data, quota: result.quota };
   }
 }

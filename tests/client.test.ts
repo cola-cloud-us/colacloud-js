@@ -320,9 +320,9 @@ describe('ColaCloud', () => {
         status: 429,
         json: async () => ({ error: 'Rate limit exceeded' }),
         headers: new Headers({
-          'X-RateLimit-Limit': '60',
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': '1704067260',
+          'X-Detail-Views-Limit': '60',
+          'X-Detail-Views-Remaining': '0',
+          'X-Quota-Reset': '1704067260',
           'Retry-After': '30',
         }),
       });
@@ -336,7 +336,7 @@ describe('ColaCloud', () => {
         expect(error).toBeInstanceOf(RateLimitError);
         const rateLimitError = error as RateLimitError;
         expect(rateLimitError.retryAfter).toBe(30);
-        expect(rateLimitError.rateLimit?.remaining).toBe(0);
+        expect(rateLimitError.quota?.remaining).toBe(0);
       }
     });
 
@@ -406,24 +406,47 @@ describe('ColaCloud', () => {
     });
   });
 
-  describe('rate limit headers', () => {
-    it('should parse rate limit headers', async () => {
+  describe('quota headers', () => {
+    it('should parse detail view quota headers', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [], pagination: {} }),
+        json: async () => ({ data: { data: {} } }),
         headers: new Headers({
-          'X-RateLimit-Limit': '60',
-          'X-RateLimit-Remaining': '59',
-          'X-RateLimit-Reset': '1704067260',
+          'X-Detail-Views-Limit': '200',
+          'X-Detail-Views-Remaining': '150',
+          'X-Quota-Reset': '1704067260',
         }),
       });
 
       const client = new ColaCloud({ apiKey: 'test-key' });
-      const result = await client.colas.listWithRateLimit();
+      const result = await client.colas.getWithQuota('12345');
 
-      expect(result.rateLimit).toEqual({
-        limit: 60,
-        remaining: 59,
+      expect(result.quota).toEqual({
+        meter: 'detail_views',
+        limit: 200,
+        remaining: 150,
+        reset: 1704067260,
+      });
+    });
+
+    it('should parse list record quota headers', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], pagination: {} }),
+        headers: new Headers({
+          'X-List-Records-Limit': '10000',
+          'X-List-Records-Remaining': '9900',
+          'X-Quota-Reset': '1704067260',
+        }),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.colas.listWithQuota();
+
+      expect(result.quota).toEqual({
+        meter: 'list_records',
+        limit: 10000,
+        remaining: 9900,
         reset: 1704067260,
       });
     });

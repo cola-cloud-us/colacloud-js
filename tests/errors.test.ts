@@ -77,16 +77,16 @@ describe('RateLimitError', () => {
     expect(error.code).toBe('rate_limit_exceeded');
   });
 
-  it('should include rate limit info', () => {
-    const rateLimit = { limit: 60, remaining: 0, reset: 1704067260 };
-    const error = new RateLimitError('Too many requests', rateLimit, 30);
-    expect(error.rateLimit).toEqual(rateLimit);
+  it('should include quota info', () => {
+    const quota = { meter: 'detail_views' as const, limit: 60, remaining: 0, reset: 1704067260 };
+    const error = new RateLimitError('Too many requests', quota, 30);
+    expect(error.quota).toEqual(quota);
     expect(error.retryAfter).toBe(30);
   });
 
-  it('should handle null rate limit info', () => {
+  it('should handle null quota info', () => {
     const error = new RateLimitError('Too many requests', null, null);
-    expect(error.rateLimit).toBeNull();
+    expect(error.quota).toBeNull();
     expect(error.retryAfter).toBeNull();
   });
 });
