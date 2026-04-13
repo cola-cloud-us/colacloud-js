@@ -451,4 +451,300 @@ describe('ColaCloud', () => {
       });
     });
   });
+
+  describe('processingTimes.list', () => {
+    it('should fetch processing times', async () => {
+      const mockResponse = {
+        data: [
+          { commodity: 'Wine', avg_days: 12 },
+          { commodity: 'Spirits', avg_days: 15 },
+        ],
+        meta: { total: 2 },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.processingTimes.list();
+
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.total).toBe(2);
+    });
+
+    it('should pass commodity filter', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { total: 0 } }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      await client.processingTimes.list({ commodity: 'Wine' });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('commodity=Wine'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('processingTimes.formula', () => {
+    it('should fetch formula processing times', async () => {
+      const mockResponse = {
+        data: [{ formula_type: 'Domestic', avg_days: 10 }],
+        meta: { total: 1 },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.processingTimes.formula();
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('should pass filter parameters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { total: 0 } }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      await client.processingTimes.formula({
+        formulaType: 'Domestic',
+        commodity: 'Wine',
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('formula_type=Domestic'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('commodity=Wine'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('processingTimes.registration', () => {
+    it('should fetch registration processing times', async () => {
+      const mockResponse = {
+        data: [{ category: 'Beverage', avg_days: 8 }],
+        meta: { total: 1 },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.processingTimes.registration();
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('should pass filter parameters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { total: 0 } }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      await client.processingTimes.registration({
+        category: 'Beverage',
+        applicationType: 'New',
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('category=Beverage'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('application_type=New'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('productionReports.list', () => {
+    it('should fetch production reports', async () => {
+      const mockResponse = {
+        data: [
+          { commodity: 'Wine', year: 2024, month: 1, volume: 1000 },
+        ],
+        meta: { total: 50, page: 1, per_page: 100, has_more: false },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.productionReports.list();
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(50);
+      expect(result.meta.has_more).toBe(false);
+    });
+
+    it('should pass filter and pagination parameters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [],
+          meta: { total: 0, page: 2, per_page: 50, has_more: false },
+        }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      await client.productionReports.list({
+        commodity: 'Wine',
+        year: 2024,
+        month: 1,
+        reportType: 'summary',
+        statisticalGroup: 'table',
+        page: 2,
+        perPage: 50,
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('commodity=Wine'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('year=2024'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('month=1'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('report_type=summary'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('statistical_group=table'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=2'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('per_page=50'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('avas.list', () => {
+    it('should fetch AVAs', async () => {
+      const mockResponse = {
+        data: [
+          { id: 'napa-valley', name: 'Napa Valley', state: 'CA' },
+          { id: 'willamette-valley', name: 'Willamette Valley', state: 'OR' },
+        ],
+        meta: { total: 2 },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.avas.list();
+
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.total).toBe(2);
+    });
+
+    it('should pass filter parameters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], meta: { total: 0 } }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      await client.avas.list({ state: 'CA', q: 'napa' });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('state=CA'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('q=napa'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('avas.get', () => {
+    it('should fetch a single AVA', async () => {
+      const mockAva = {
+        id: 'napa-valley',
+        name: 'Napa Valley',
+        state: 'CA',
+        established: '1981-02-27',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: mockAva }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+      const result = await client.avas.get('napa-valley');
+
+      expect(result).toEqual(mockAva);
+    });
+
+    it('should throw NotFoundError for 404', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'AVA not found' }),
+        headers: new Headers(),
+      });
+
+      const client = new ColaCloud({ apiKey: 'test-key' });
+
+      await expect(client.avas.get('nonexistent')).rejects.toThrow(
+        NotFoundError
+      );
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'AVA not found' }),
+        headers: new Headers(),
+      });
+
+      await expect(client.avas.get('nonexistent')).rejects.toMatchObject({
+        resourceType: 'AVA',
+        resourceId: 'nonexistent',
+      });
+    });
+  });
 });

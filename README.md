@@ -336,6 +336,6 @@ MIT
 
 ## Support
 
-- Documentation: https://colacloud.us/docs/api
+- Documentation: https://docs.colacloud.us/api-reference
 - Issues: https://github.com/cola-cloud-us/colacloud-js/issues
 - Email: support@colacloud.us

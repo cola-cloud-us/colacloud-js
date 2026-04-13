@@ -15,16 +15,30 @@ import {
 import { createPaginatedIterator } from './pagination.js';
 import type {
   ApiErrorResponse,
+  AvaDetail,
+  AvaListParams,
+  AvaSummary,
   BarcodeLookupResult,
   ColaCloudConfig,
   ColaDetail,
   ColaListParams,
   ColaSummary,
+  FormulaProcessingTime,
+  FormulaProcessingTimesParams,
   PaginatedResponse,
   PermitteeDetail,
   PermitteeListParams,
   PermitteeSummary,
+  ProcessingTime,
+  ProcessingTimesParams,
+  ProductionReport,
+  ProductionReportsParams,
   QuotaInfo,
+  ReferenceListResponse,
+  ReferencePaginatedResponse,
+  ReferenceSingleResponse,
+  RegistrationProcessingTime,
+  RegistrationProcessingTimesParams,
   ResponseWithQuota,
   SingleResponse,
   UsageStats,
@@ -118,6 +132,12 @@ export class ColaCloud {
   public readonly barcodes: BarcodesResource;
   /** Usage statistics endpoint */
   public readonly usage: UsageResource;
+  /** Processing times reference data endpoints */
+  public readonly processingTimes: ProcessingTimesResource;
+  /** Production reports reference data endpoints */
+  public readonly productionReports: ProductionReportsResource;
+  /** AVA (American Viticultural Area) reference data endpoints */
+  public readonly avas: AvasResource;
 
   /**
    * Create a new COLA Cloud API client
@@ -137,6 +157,9 @@ export class ColaCloud {
     this.permittees = new PermitteesResource(this);
     this.barcodes = new BarcodesResource(this);
     this.usage = new UsageResource(this);
+    this.processingTimes = new ProcessingTimesResource(this);
+    this.productionReports = new ProductionReportsResource(this);
+    this.avas = new AvasResource(this);
   }
 
   /**
@@ -535,5 +558,119 @@ class UsageResource {
       '/usage'
     );
     return { data: result.data.data, quota: result.quota };
+  }
+}
+
+/**
+ * Processing times reference data resource handler
+ */
+class ProcessingTimesResource {
+  constructor(private readonly client: ColaCloud) {}
+
+  /**
+   * Get processing times overview
+   * @param params Optional filter parameters
+   * @returns Processing times data with total count
+   */
+  async list(
+    params: ProcessingTimesParams = {}
+  ): Promise<ReferenceListResponse<ProcessingTime>> {
+    const result = await this.client.request<
+      ReferenceListResponse<ProcessingTime>
+    >('GET', '/processing-times', params as Record<string, unknown>);
+    return result.data;
+  }
+
+  /**
+   * Get formula processing times
+   * @param params Optional filter parameters
+   * @returns Formula processing times data with total count
+   */
+  async formula(
+    params: FormulaProcessingTimesParams = {}
+  ): Promise<ReferenceListResponse<FormulaProcessingTime>> {
+    const result = await this.client.request<
+      ReferenceListResponse<FormulaProcessingTime>
+    >('GET', '/processing-times/formula', params as Record<string, unknown>);
+    return result.data;
+  }
+
+  /**
+   * Get registration processing times
+   * @param params Optional filter parameters
+   * @returns Registration processing times data with total count
+   */
+  async registration(
+    params: RegistrationProcessingTimesParams = {}
+  ): Promise<ReferenceListResponse<RegistrationProcessingTime>> {
+    const result = await this.client.request<
+      ReferenceListResponse<RegistrationProcessingTime>
+    >(
+      'GET',
+      '/processing-times/registration',
+      params as Record<string, unknown>
+    );
+    return result.data;
+  }
+}
+
+/**
+ * Production reports reference data resource handler
+ */
+class ProductionReportsResource {
+  constructor(private readonly client: ColaCloud) {}
+
+  /**
+   * List production reports with pagination
+   * @param params Filter and pagination parameters
+   * @returns Paginated production reports data
+   */
+  async list(
+    params: ProductionReportsParams = {}
+  ): Promise<ReferencePaginatedResponse<ProductionReport>> {
+    const result = await this.client.request<
+      ReferencePaginatedResponse<ProductionReport>
+    >('GET', '/production-reports', params as Record<string, unknown>);
+    return result.data;
+  }
+}
+
+/**
+ * AVA (American Viticultural Area) reference data resource handler
+ */
+class AvasResource {
+  constructor(private readonly client: ColaCloud) {}
+
+  /**
+   * List and search AVAs
+   * @param params Optional filter parameters
+   * @returns AVA data with total count
+   */
+  async list(
+    params: AvaListParams = {}
+  ): Promise<ReferenceListResponse<AvaSummary>> {
+    const result = await this.client.request<
+      ReferenceListResponse<AvaSummary>
+    >('GET', '/avas', params as Record<string, unknown>);
+    return result.data;
+  }
+
+  /**
+   * Get a single AVA by ID
+   * @param avaId The unique AVA identifier
+   * @returns Full AVA details
+   */
+  async get(avaId: string): Promise<AvaDetail> {
+    try {
+      const result = await this.client.request<
+        ReferenceSingleResponse<AvaDetail>
+      >('GET', `/avas/${encodeURIComponent(avaId)}`);
+      return result.data.data;
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw new NotFoundError('AVA', avaId);
+      }
+      throw error;
+    }
   }
 }

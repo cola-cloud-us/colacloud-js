@@ -382,6 +382,160 @@ export interface UsageStats {
 }
 
 // ============================================================================
+// Reference Data Types (free endpoints)
+// ============================================================================
+
+/**
+ * Metadata for reference data list responses
+ */
+export interface ReferenceListMeta {
+  /** Total number of items */
+  total: number;
+}
+
+/**
+ * Metadata for paginated reference data responses
+ */
+export interface ReferenceListPaginatedMeta {
+  /** Total number of items */
+  total: number;
+  /** Current page number */
+  page: number;
+  /** Items per page */
+  per_page: number;
+  /** Whether there are more results */
+  has_more: boolean;
+}
+
+/**
+ * Response wrapper for reference data list endpoints
+ */
+export interface ReferenceListResponse<T> {
+  /** Array of items */
+  data: T[];
+  /** Response metadata */
+  meta: ReferenceListMeta;
+}
+
+/**
+ * Response wrapper for paginated reference data list endpoints
+ */
+export interface ReferencePaginatedResponse<T> {
+  /** Array of items */
+  data: T[];
+  /** Response metadata with pagination */
+  meta: ReferenceListPaginatedMeta;
+}
+
+/**
+ * Response wrapper for single reference data endpoints
+ */
+export interface ReferenceSingleResponse<T> {
+  /** The requested item */
+  data: T;
+}
+
+/**
+ * Query parameters for processing times overview
+ */
+export interface ProcessingTimesParams {
+  /** Filter by commodity type */
+  commodity?: string;
+}
+
+/**
+ * Query parameters for formula processing times
+ */
+export interface FormulaProcessingTimesParams {
+  /** Filter by formula type */
+  formulaType?: string;
+  /** Filter by commodity type */
+  commodity?: string;
+}
+
+/**
+ * Query parameters for registration processing times
+ */
+export interface RegistrationProcessingTimesParams {
+  /** Filter by category */
+  category?: string;
+  /** Filter by application type */
+  applicationType?: string;
+}
+
+/**
+ * Query parameters for production reports
+ */
+export interface ProductionReportsParams {
+  /** Filter by commodity type */
+  commodity?: string;
+  /** Filter by year */
+  year?: number;
+  /** Filter by month */
+  month?: number;
+  /** Filter by report type */
+  reportType?: string;
+  /** Filter by statistical group */
+  statisticalGroup?: string;
+  /** Page number (1-indexed, default 1) */
+  page?: number;
+  /** Items per page (default 100, max 100) */
+  perPage?: number;
+}
+
+/**
+ * Query parameters for AVA (American Viticultural Area) list
+ */
+export interface AvaListParams {
+  /** Filter by state */
+  state?: string;
+  /** Search by name */
+  q?: string;
+}
+
+/**
+ * A processing time record
+ */
+export interface ProcessingTime {
+  [key: string]: unknown;
+}
+
+/**
+ * A formula processing time record
+ */
+export interface FormulaProcessingTime {
+  [key: string]: unknown;
+}
+
+/**
+ * A registration processing time record
+ */
+export interface RegistrationProcessingTime {
+  [key: string]: unknown;
+}
+
+/**
+ * A production report record
+ */
+export interface ProductionReport {
+  [key: string]: unknown;
+}
+
+/**
+ * An AVA (American Viticultural Area) summary record
+ */
+export interface AvaSummary {
+  [key: string]: unknown;
+}
+
+/**
+ * Full AVA (American Viticultural Area) detail record
+ */
+export interface AvaDetail {
+  [key: string]: unknown;
+}
+
+// ============================================================================
 // API Error Types
 // ============================================================================
 

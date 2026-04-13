@@ -87,6 +87,24 @@ export type {
   // Usage types
   UsageStats,
 
+  // Reference data types
+  ReferenceListMeta,
+  ReferenceListPaginatedMeta,
+  ReferenceListResponse,
+  ReferencePaginatedResponse,
+  ReferenceSingleResponse,
+  ProcessingTimesParams,
+  FormulaProcessingTimesParams,
+  RegistrationProcessingTimesParams,
+  ProductionReportsParams,
+  AvaListParams,
+  ProcessingTime,
+  FormulaProcessingTime,
+  RegistrationProcessingTime,
+  ProductionReport,
+  AvaSummary,
+  AvaDetail,
+
   // Error types
   ApiErrorResponse,
 } from './types.js';
