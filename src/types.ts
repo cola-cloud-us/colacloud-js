@@ -296,12 +296,12 @@ export interface PermitteeSummary {
   is_active: boolean;
   /** Reason for active/inactive status */
   active_reason: string | null;
-  /** Total number of COLAs */
-  colas: number;
-  /** Number of approved COLAs */
-  colas_approved: number;
-  /** Date of most recent COLA application (ISO date string) */
-  last_cola_application_date: string | null;
+  /** Total number of COLAs. Paid plans only (starter/pro). */
+  colas?: number;
+  /** Number of approved COLAs. Paid plans only (starter/pro). */
+  colas_approved?: number;
+  /** Date of most recent COLA application (ISO date string). Paid plans only (starter/pro). */
+  last_cola_application_date?: string | null;
 }
 
 /**
