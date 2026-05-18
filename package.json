@@ -1,6 +1,6 @@
 {
   "name": "colacloud",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Official JavaScript/TypeScript SDK for the COLA Cloud API - access the TTB COLA Registry of alcohol product label approvals",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -40,7 +40,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cola-cloud-us/colacloud-js.git"
+    "url": "git+https://github.com/cola-cloud-us/colacloud-js.git"
   },
   "homepage": "https://colacloud.us",
   "bugs": {
