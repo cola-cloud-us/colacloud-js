@@ -256,10 +256,22 @@ export interface ColaListParams {
   q?: string;
   /** Filter by product type */
   productType?: string;
+  /** Filter by derived top-level category */
+  category?: string;
+  /** Filter by derived category path prefix */
+  derivedSubcategory?: string;
   /** Filter by origin/country */
   origin?: string;
+  /** Filter by domestic/imported origin */
+  domesticOrImported?: 'domestic' | 'imported';
+  /** Filter by application status */
+  status?: string;
   /** Filter by brand name */
   brandName?: string;
+  /** Filter by exact permit number */
+  permitNumber?: string;
+  /** Filter by exact main barcode value */
+  barcodeValue?: string;
   /** Filter by approval date (from) */
   approvalDateFrom?: string;
   /** Filter by approval date (to) */
@@ -268,6 +280,14 @@ export interface ColaListParams {
   abvMin?: number;
   /** Maximum ABV percentage */
   abvMax?: number;
+  /** Package volume unit. Required when volumeMin or volumeMax is set. */
+  volumeUnit?: string;
+  /** Minimum package volume in volumeUnit */
+  volumeMin?: number;
+  /** Maximum package volume in volumeUnit */
+  volumeMax?: number;
+  /** Filter by derived container type */
+  containerType?: string;
   /** Page number (1-indexed) */
   page?: number;
   /** Items per page */
