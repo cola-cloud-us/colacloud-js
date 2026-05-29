@@ -84,8 +84,18 @@ describe('ColaCloud', () => {
       const client = new ColaCloud({ apiKey: 'test-key' });
       await client.colas.list({
         q: 'bourbon',
-        productType: 'distilled spirits',
+        productType: 'distilled spirits,wine',
+        category: 'Liquor,Wine',
+        derivedSubcategory: 'Liquor > Whiskey',
+        domesticOrImported: 'domestic',
+        status: 'approved',
+        permitNumber: 'KY-I-12345',
+        barcodeValue: '012345678905',
         abvMin: 40,
+        volumeUnit: 'milliliters',
+        volumeMin: 375,
+        volumeMax: 750,
+        containerType: 'bottle,can',
         page: 2,
       });
 
@@ -99,6 +109,42 @@ describe('ColaCloud', () => {
       );
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('abv_min=40'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('category=Liquor%2CWine'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('derived_subcategory=Liquor+%3E+Whiskey'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('domestic_or_imported=domestic'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('permit_number=KY-I-12345'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('barcode_value=012345678905'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('volume_unit=milliliters'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('volume_min=375'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('volume_max=750'),
+        expect.any(Object)
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('container_type=bottle%2Ccan'),
         expect.any(Object)
       );
     });
