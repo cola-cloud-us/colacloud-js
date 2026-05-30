@@ -39,6 +39,10 @@ console.log(`Smoke testing colacloud JS SDK against ${display}\n`);
 
 const results = [];
 
+function formatTotal(total) {
+  return total == null ? 'unknown' : String(total);
+}
+
 async function check(name, fn) {
   const start = performance.now();
   try {
@@ -62,11 +66,12 @@ let permitNumber = null;
 await check('colas.list({ perPage: 1 })', async () => {
   const resp = await client.colas.list({ perPage: 1 });
   if (!resp.data?.length) throw new Error('expected at least one COLA');
-  if (!resp.pagination?.total) throw new Error('expected total > 0');
+  if (resp.pagination?.page !== 1) throw new Error('expected page 1');
+  if (resp.pagination?.per_page !== 1) throw new Error('expected per_page 1');
   const cola = resp.data[0];
   if (!cola.ttb_id) throw new Error('expected ttb_id on COLA');
   ttbId = cola.ttb_id;
-  return `total=${resp.pagination.total}, first=${ttbId}`;
+  return `total=${formatTotal(resp.pagination.total)}, first=${ttbId}`;
 });
 
 // --- colas.get ---
@@ -101,7 +106,7 @@ await check('permittees.list({ perPage: 1 })', async () => {
   const p = resp.data[0];
   if (!p.permit_number) throw new Error('expected permit_number');
   permitNumber = p.permit_number;
-  return `total=${resp.pagination.total}, first=${permitNumber}`;
+  return `total=${formatTotal(resp.pagination.total)}, first=${permitNumber}`;
 });
 
 // --- permittees.get ---
@@ -117,8 +122,15 @@ await check(`permittees.get(${permitNumber})`, async () => {
 await check('usage.get()', async () => {
   const usage = await client.usage.get();
   if (!usage.tier) throw new Error('expected tier');
-  if (!usage.monthly_limit) throw new Error('expected monthly_limit');
-  return `tier=${usage.tier}, used=${usage.requests_used}/${usage.monthly_limit}`;
+  if (!usage.current_period) throw new Error('expected current_period');
+  if (!usage.detail_views) throw new Error('expected detail_views quota');
+  if (!usage.list_records) throw new Error('expected list_records quota');
+  if (!usage.per_minute_limit) throw new Error('expected per_minute_limit');
+  return (
+    `tier=${usage.tier}, ` +
+    `detail_views=${usage.detail_views.used}/${usage.detail_views.limit}, ` +
+    `list_records=${usage.list_records.used}/${usage.list_records.limit}`
+  );
 });
 
 // --- Summary ---
