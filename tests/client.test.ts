@@ -149,7 +149,7 @@ describe('ColaCloud', () => {
       );
     });
 
-    it('should include API key header', async () => {
+    it('should include API key and client classification headers', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ data: [], pagination: {} }),
@@ -164,6 +164,7 @@ describe('ColaCloud', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'X-API-Key': 'my-secret-key',
+            'X-COLA-Client': 'javascript_sdk',
           }),
         })
       );

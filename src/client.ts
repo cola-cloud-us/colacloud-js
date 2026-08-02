@@ -187,6 +187,7 @@ export class ColaCloud {
         method,
         headers: {
           'X-API-Key': this.apiKey,
+          'X-COLA-Client': 'javascript_sdk',
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
