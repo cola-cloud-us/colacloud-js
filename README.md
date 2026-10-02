@@ -2,6 +2,8 @@
 
 Official JavaScript/TypeScript SDK for the [COLA Cloud API](https://colacloud.us) - access the TTB COLA Registry of alcohol product label approvals.
 
+COLA Cloud is an independent service that turns public TTB label approvals into searchable, enriched data. An approval record is not a unique product or proof of current retail availability. See the [product-data workflow and source limits](https://colacloud.us/product-enrichment) and [California wine recipe](https://colacloud.us/data/california-wine).
+
 ## Features
 
 - Full TypeScript support with comprehensive type definitions
@@ -25,14 +27,23 @@ import { ColaCloud } from 'colacloud';
 const client = new ColaCloud({ apiKey: 'your-api-key' });
 
 // Search COLAs
-const { data, pagination } = await client.colas.list({
-  q: 'bourbon',
-  productType: 'distilled spirits',
+const { data } = await client.colas.list({
+  productType: 'wine',
+  origin: 'California',
+  approvalDateFrom: '2026-08-01',
+  approvalDateTo: '2026-08-31',
+  perPage: 1,
 });
 
-console.log(`Found ${pagination.total} results`);
+console.log(`Returned ${data.length} records on this page`);
 for (const cola of data) {
   console.log(`${cola.brand_name}: ${cola.product_name}`);
+}
+
+// Retrieve a real ID returned by search; an empty page is valid
+if (data.length > 0) {
+  const detail = await client.colas.get(data[0].ttb_id);
+  console.log(detail.brand_name, detail.abv); // Extracted fields may be null
 }
 ```
 
@@ -58,37 +69,30 @@ const client = new ColaCloud({
 // Basic search
 const results = await client.colas.list({ q: 'whiskey' });
 
-// Advanced search with filters
+// Small California-origin wine query with an explicit date scope
 const filtered = await client.colas.list({
-  q: 'bourbon',
-  productType: 'distilled spirits',
-  category: 'Liquor',
-  derivedSubcategory: 'Liquor > Whiskey',
-  origin: 'united states',
-  brandName: 'maker',
-  permitNumber: 'KY-I-12345',
-  barcodeValue: '012345678905',
-  approvalDateFrom: '2023-01-01',
-  approvalDateTo: '2023-12-31',
-  abvMin: 40,
-  abvMax: 50,
-  volumeUnit: 'milliliters',
-  volumeMin: 375,
-  volumeMax: 750,
-  containerType: 'bottle,can',
-  page: 1,
-  perPage: 50,
+  productType: 'wine',
+  origin: 'California',
+  approvalDateFrom: '2026-08-01',
+  approvalDateTo: '2026-08-31',
+  perPage: 1,
 });
 
-// Access pagination info
-console.log(`Page ${filtered.pagination.page} of ${filtered.pagination.pages}`);
-console.log(`Total: ${filtered.pagination.total} COLAs`);
+console.log(`Returned ${filtered.data.length} records`);
+if (filtered.pagination.total != null) {
+  console.log(`Total: ${filtered.pagination.total} records`);
+}
+console.log(`More pages available: ${filtered.pagination.has_more}`);
 ```
+
+`origin` matches a recorded state/country name; a California business address is a different filter. It does not establish appellation, ownership, or current sale. Use `domesticOrImported` for the documented domestic/imported classification, not `origin: 'united states'`.
 
 ### Getting a Single COLA
 
 ```typescript
-const cola = await client.colas.get('12345678');
+const matches = await client.colas.list({ productType: 'wine', origin: 'California', perPage: 1 });
+if (matches.data.length === 0) throw new Error('No matches in the query scope');
+const cola = await client.colas.get(matches.data[0].ttb_id);
 
 console.log(cola.brand_name);
 console.log(cola.product_name);
@@ -96,7 +100,7 @@ console.log(cola.abv);
 
 // Access images
 for (const image of cola.images) {
-  console.log(image.url);
+  console.log(image.image_url);
 }
 
 // Access barcodes
@@ -107,11 +111,13 @@ for (const barcode of cola.barcodes) {
 
 ### Async Iterator for Pagination
 
-Use async iterators to automatically page through all results:
+Use async iterators to page through the matching query scope. Without explicit dates the API defaults to the last 365 days. Totals and page counts may be null; the iterator handles continuation. Date eligibility can fall back from approval date to application/latest-update date. Each page uses your plan allowance:
 
 ```typescript
 // Iterate through all matching COLAs
-for await (const cola of client.colas.iterate({ q: 'vodka' })) {
+for await (const cola of client.colas.iterate({
+  q: 'vodka', approvalDateFrom: '2026-08-01', approvalDateTo: '2026-08-31',
+})) {
   console.log(cola.ttb_id, cola.brand_name);
 }
 
@@ -138,7 +144,8 @@ const { data: permittees } = await client.permittees.list({
 });
 
 // Get a specific permittee
-const permittee = await client.permittees.get('KY-12345');
+if (permittees.length === 0) throw new Error('No permittees found');
+const permittee = await client.permittees.get(permittees[0].permit_number);
 console.log(permittee.company_name);
 console.log(`${permittee.colas} total COLAs`);
 
@@ -155,8 +162,10 @@ for await (const p of client.permittees.iterate({ state: 'CA' })) {
 
 ### Barcode Lookup
 
+Barcode lookup returns matching approval records from decoded label images. Codes may be missing or repeated across approvals; review the candidate records before treating a match as a product identity. The UPC example uses a code from the [existing whiskey evaluation sample](https://colacloud.us/data-packs/whiskey).
+
 ```typescript
-const result = await client.barcodes.lookup('012345678905');
+const result = await client.barcodes.lookup('869357000220');
 
 console.log(`Barcode: ${result.barcode_value}`);
 console.log(`Type: ${result.barcode_type}`);
@@ -340,10 +349,10 @@ The SDK works in modern browsers that support the Fetch API:
 
 ## License
 
-MIT
+MIT covers this SDK. Data and label artwork have separate rights and terms.
 
 ## Support
 
 - Documentation: https://docs.colacloud.us/api-reference
 - Issues: https://github.com/cola-cloud-us/colacloud-js/issues
-- Email: support@colacloud.us
+- Email: help@colacloud.us
