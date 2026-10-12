@@ -795,3 +795,17 @@ describe('ColaCloud', () => {
     });
   });
 });
+
+
+describe('applicant trade name', () => {
+  it('retains the additive field in list and detail responses', async () => {
+    const client = new ColaCloud({ apiKey: 'test-key' });
+    for (const value of ['BAOBAB WINES', null]) {
+      const record = { ttb_id: '123', applicant_trade_name: value };
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [record], pagination: {} }), headers: new Headers() });
+      expect((await client.colas.list()).data[0]?.applicant_trade_name).toBe(value);
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: record }), headers: new Headers() });
+      expect((await client.colas.get('123')).applicant_trade_name).toBe(value);
+    }
+  });
+});
