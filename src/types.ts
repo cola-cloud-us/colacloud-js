@@ -107,6 +107,8 @@ export interface ColaSummary {
   class_name: string | null;
   /** Origin/country of the product */
   origin_name: string | null;
+  /** Explicit "Used on label" applicant name; null is not proof of absence. */
+  applicant_trade_name?: string | null;
   /** Permit number of the applicant */
   permit_number: string | null;
   /** Date the COLA was approved (ISO date string) */

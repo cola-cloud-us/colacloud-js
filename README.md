@@ -356,3 +356,11 @@ MIT covers this SDK. Data and label artwork have separate rights and terms.
 - Documentation: https://docs.colacloud.us/api-reference
 - Issues: https://github.com/cola-cloud-us/colacloud-js/issues
 - Email: help@colacloud.us
+
+### Applicant trade names
+
+COLA list and detail results expose `applicant_trade_name`: the applicant DBA/trade
+name explicitly marked “Used on label” in the captured TTB form. It is separate
+from the product brand and legal company. `null` means no unambiguous marked
+value was captured; older API responses can omit it. Use the existing permit and
+approval-date filters to select a cohort.
