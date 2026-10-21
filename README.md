@@ -229,8 +229,17 @@ try {
   } else if (error instanceof AuthenticationError) {
     console.log('Invalid API key');
   } else if (error instanceof RateLimitError) {
-    console.log(`Rate limited. Retry after ${error.retryAfter} seconds`);
-    console.log(`Remaining: ${error.rateLimit?.remaining}`);
+    if (error.code === 'quota_exceeded') {
+      console.log('Pause this monthly meter:', error.details?.meter);
+      if (error.quota) {
+        console.log('Resets at:', new Date(error.quota.reset * 1000));
+      }
+      console.log('Account options:', error.upgradeUrl);
+    } else if (error.code === 'rate_limit_exceeded' && error.retryAfter !== null) {
+      console.log(`Wait at least ${error.retryAfter} seconds before another attempt`);
+    } else {
+      console.log('Pause and inspect the error code:', error.code);
+    }
   } else if (error instanceof ValidationError) {
     console.log('Invalid request:', error.message);
     console.log('Field errors:', error.fieldErrors);
@@ -246,6 +255,21 @@ try {
   }
 }
 ```
+
+Each request makes one attempt and does not automatically retry HTTP errors. API
+errors preserve the server's `code`, readable `message`, and `details`; an
+optional `upgradeUrl` exposes an account link already supplied by the API.
+
+For `quota_exceeded`, persist a pause in your scheduler for the affected account
+and meter until `quota.reset` (a UTC Unix timestamp in seconds) or a confirmed
+plan change. Keep that pause across worker restarts. A short retry delay does
+not restore a monthly allowance. If reset timing is unavailable, hold the job
+for account review rather than guessing a delay.
+
+For `rate_limit_exceeded`, honor `retryAfter` and cap the number of later
+attempts. Stop an unchanged `ValidationError` request until its input is
+corrected. Unknown errors need diagnosis before resuming. A paused job and a
+successfully delivered result are separate outcomes.
 
 ## TypeScript Types
 

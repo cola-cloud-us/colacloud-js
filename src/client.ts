@@ -11,10 +11,10 @@ import {
   ServerError,
   TimeoutError,
   ValidationError,
+  normalizeApiErrorResponse,
 } from './errors.js';
 import { createPaginatedIterator } from './pagination.js';
 import type {
-  ApiErrorResponse,
   AvaDetail,
   AvaListParams,
   AvaSummary,
@@ -235,42 +235,51 @@ export class ColaCloud {
     response: Response,
     quota: QuotaInfo | null
   ): Promise<never> {
-    let errorData: ApiErrorResponse;
+    let errorData: unknown;
     try {
-      errorData = (await response.json()) as ApiErrorResponse;
+      errorData = await response.json();
     } catch {
-      errorData = { error: response.statusText || 'Unknown error' };
+      errorData = undefined;
     }
 
-    const message = errorData.error || 'Unknown error';
+    const error = normalizeApiErrorResponse(
+      errorData, response.statusText || 'Unknown error'
+    );
+    const { message } = error;
 
     switch (response.status) {
       case 401:
-        throw new AuthenticationError(message);
+        throw new AuthenticationError(message, error);
 
       case 404:
-        throw new NotFoundError('Resource', 'unknown');
+        throw new NotFoundError('Resource', 'unknown', message, error);
 
       case 429: {
         const retryAfter = response.headers.get('Retry-After');
+        const retrySeconds =
+          retryAfter !== null && /^\d+$/.test(retryAfter) ? Number(retryAfter) : NaN;
         throw new RateLimitError(
           message,
           quota,
-          retryAfter ? parseInt(retryAfter, 10) : null
+          Number.isSafeInteger(retrySeconds) ? retrySeconds : null,
+          error
         );
       }
 
-      case 400:
-        throw new ValidationError(
-          message,
-          errorData.details as Record<string, string[]> | undefined
-        );
+      case 400: {
+        const fieldErrors = error.details && Object.values(error.details).every(
+          value => Array.isArray(value) && value.every(item => typeof item === 'string')
+        ) ? error.details as Record<string, string[]> : undefined;
+        throw new ValidationError(message, fieldErrors, error);
+      }
 
       default:
         if (response.status >= 500) {
-          throw new ServerError(message, response.status);
+          throw new ServerError(message, response.status, error);
         }
-        throw ColaCloudError.fromResponse(errorData, response.status);
+        throw new ColaCloudError(
+          message, response.status, error.code, error.details, error.upgradeUrl
+        );
     }
   }
 }
