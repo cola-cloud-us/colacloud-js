@@ -565,10 +565,16 @@ export interface AvaDetail {
  * Error response structure from the API
  */
 export interface ApiErrorResponse {
-  /** Error message */
-  error: string;
-  /** Error code */
+  /** Current nested API error, or a legacy flat error message. */
+  error: string | {
+    message: string;
+    code?: string;
+    details?: Record<string, unknown>;
+    upgrade_url?: string;
+  };
+  /** Legacy flat error code */
   code?: string;
-  /** Additional error details */
+  /** Legacy flat error details */
   details?: Record<string, unknown>;
+  upgrade_url?: string;
 }

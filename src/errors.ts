@@ -4,6 +4,35 @@
 
 import type { ApiErrorResponse, QuotaInfo } from './types.js';
 
+export interface ApiErrorMetadata {
+  code?: string;
+  details?: Record<string, unknown>;
+  upgradeUrl?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function nonemptyString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+export function normalizeApiErrorResponse(
+  response: unknown,
+  fallbackMessage = 'Unknown error'
+): ApiErrorMetadata & { message: string } {
+  const body = isRecord(response) ? response : {};
+  const error = isRecord(body.error) ? body.error : body;
+  return {
+    message:
+      nonemptyString(isRecord(body.error) ? error.message : body.error) ?? fallbackMessage,
+    code: nonemptyString(error.code),
+    details: isRecord(error.details) ? error.details : undefined,
+    upgradeUrl: nonemptyString(error.upgrade_url),
+  };
+}
+
 /**
  * Base error class for all COLA Cloud SDK errors
  */
@@ -14,18 +43,22 @@ export class ColaCloudError extends Error {
   public readonly code: string | undefined;
   /** Additional error details */
   public readonly details: Record<string, unknown> | undefined;
+  /** Upgrade URL supplied by the API, when relevant. */
+  public readonly upgradeUrl: string | undefined;
 
   constructor(
     message: string,
     statusCode?: number,
     code?: string,
-    details?: Record<string, unknown>
+    details?: Record<string, unknown>,
+    upgradeUrl?: string
   ) {
     super(message);
     this.name = 'ColaCloudError';
     this.statusCode = statusCode;
     this.code = code;
     this.details = details;
+    this.upgradeUrl = upgradeUrl;
 
     // Maintains proper stack trace for where error was thrown (only in V8)
     if (Error.captureStackTrace) {
@@ -40,11 +73,9 @@ export class ColaCloudError extends Error {
     response: ApiErrorResponse,
     statusCode: number
   ): ColaCloudError {
+    const error = normalizeApiErrorResponse(response);
     return new ColaCloudError(
-      response.error,
-      statusCode,
-      response.code,
-      response.details
+      error.message, statusCode, error.code, error.details, error.upgradeUrl
     );
   }
 }
@@ -53,8 +84,13 @@ export class ColaCloudError extends Error {
  * Error thrown when authentication fails (401 Unauthorized)
  */
 export class AuthenticationError extends ColaCloudError {
-  constructor(message: string = 'Invalid or missing API key') {
-    super(message, 401, 'authentication_error');
+  constructor(
+    message: string = 'Invalid or missing API key',
+    metadata: ApiErrorMetadata = {}
+  ) {
+    super(
+      message, 401, metadata.code ?? 'authentication_error', metadata.details, metadata.upgradeUrl
+    );
     this.name = 'AuthenticationError';
 
     if (Error.captureStackTrace) {
@@ -75,9 +111,12 @@ export class RateLimitError extends ColaCloudError {
   constructor(
     message: string = 'Rate limit exceeded',
     quota: QuotaInfo | null = null,
-    retryAfter: number | null = null
+    retryAfter: number | null = null,
+    metadata: ApiErrorMetadata = {}
   ) {
-    super(message, 429, 'rate_limit_exceeded');
+    super(
+      message, 429, metadata.code ?? 'rate_limit_exceeded', metadata.details, metadata.upgradeUrl
+    );
     this.name = 'RateLimitError';
     this.quota = quota;
     this.retryAfter = retryAfter;
@@ -97,8 +136,15 @@ export class NotFoundError extends ColaCloudError {
   /** The identifier that was searched for */
   public readonly resourceId: string;
 
-  constructor(resourceType: string, resourceId: string) {
-    super(`${resourceType} not found: ${resourceId}`, 404, 'not_found');
+  constructor(
+    resourceType: string,
+    resourceId: string,
+    message = `${resourceType} not found: ${resourceId}`,
+    metadata: ApiErrorMetadata = {}
+  ) {
+    super(
+      message, 404, metadata.code ?? 'not_found', metadata.details, metadata.upgradeUrl
+    );
     this.name = 'NotFoundError';
     this.resourceType = resourceType;
     this.resourceId = resourceId;
@@ -118,9 +164,13 @@ export class ValidationError extends ColaCloudError {
 
   constructor(
     message: string = 'Invalid request parameters',
-    fieldErrors?: Record<string, string[]>
+    fieldErrors?: Record<string, string[]>,
+    metadata: ApiErrorMetadata = {}
   ) {
-    super(message, 400, 'validation_error', fieldErrors as Record<string, unknown>);
+    super(
+      message, 400, metadata.code ?? 'validation_error',
+      metadata.details ?? fieldErrors, metadata.upgradeUrl
+    );
     this.name = 'ValidationError';
     this.fieldErrors = fieldErrors;
 
@@ -134,8 +184,14 @@ export class ValidationError extends ColaCloudError {
  * Error thrown when the server encounters an error (500+ status codes)
  */
 export class ServerError extends ColaCloudError {
-  constructor(message: string = 'Internal server error', statusCode: number = 500) {
-    super(message, statusCode, 'server_error');
+  constructor(
+    message: string = 'Internal server error',
+    statusCode: number = 500,
+    metadata: ApiErrorMetadata = {}
+  ) {
+    super(
+      message, statusCode, metadata.code ?? 'server_error', metadata.details, metadata.upgradeUrl
+    );
     this.name = 'ServerError';
 
     if (Error.captureStackTrace) {

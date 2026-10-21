@@ -42,6 +42,7 @@ export {
   TimeoutError,
   NetworkError,
 } from './errors.js';
+export type { ApiErrorMetadata } from './errors.js';
 
 // Pagination utilities
 export {
