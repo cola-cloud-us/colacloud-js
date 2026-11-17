@@ -4,7 +4,7 @@ This is the public JavaScript/TypeScript SDK for the COLA Cloud API. Keep this r
 
 ## Development
 
-- Use `npm install` to install dependencies.
+- Use Node 24.22.1 and npm 12.0.2; install with `npm ci --ignore-scripts`.
 - Run tests with `npm test`.
 - Run type checks with `npm run typecheck`.
 - Build with `npm run build`.
