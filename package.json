@@ -26,7 +26,7 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "dependencies:age": "node scripts/check-dependency-age.mjs",
-    "dependencies:audit": "npm audit --audit-level=high"
+    "dependencies:audit": "npm audit --omit=dev --package-lock-only --audit-level=moderate && node scripts/audit-build-tools.mjs"
   },
   "keywords": [
     "cola",
