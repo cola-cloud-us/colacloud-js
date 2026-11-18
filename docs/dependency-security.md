@@ -22,3 +22,13 @@ for majors). Audit failures must be triaged; do not use `npm audit fix --force`.
 Registry signatures and provenance establish origin, not harmless behavior.
 Review added packages and install/build scripts. Keep builds separate from
 publication/deployment credentials. Checkout credentials are not persisted in CI.
+
+## Reviewed build dependency
+
+Runtime and full-lock audits block at moderate severity. The high-severity
+[picomatch advisory](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) affects
+repository-controlled build and test globs. The SDK has no runtime npm dependencies.
+While upstream has no patch, the audit annotates the reviewed development-only
+copies. A new upstream latest release, a change in the advisory or dependency
+exposure, or December 1, 2026 UTC requires fresh review. Keep the ordinary
+runtime audit, provenance checks, and seven-day release age gate enabled.

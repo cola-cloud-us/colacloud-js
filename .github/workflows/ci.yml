@@ -33,7 +33,7 @@ jobs:
       - name: Validate dependencies (.)
         working-directory: .
         run: |
-          node --test scripts/test-lockfile-provenance.mjs
+          node --test scripts/test-lockfile-provenance.mjs scripts/test-audit-build-tools.mjs
           npm run dependencies:age
           npm run dependencies:audit
           npm ci --ignore-scripts --no-audit --no-fund
